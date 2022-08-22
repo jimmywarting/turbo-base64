@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8'>
+</head>
+<body>
+  <script type="module">
+    import { encode, decode, instance, module } from './base.js'
+    import * as e from 'https://cdn.jsdelivr.net/npm/fast-base64@0.1.8'
+
+    globalThis.fast = e
+    const randomSize = crypto.getRandomValues(new Uint16Array(1))[0]
+    const data = crypto.getRandomValues(new Uint8Array(randomSize))
+    // const data = await fetch('https://picsum.photos/1000/').then(r => r.arrayBuffer());
+    // const data = await fetch('https://httpbin.org/get').then(r => r.arrayBuffer());
+    // const data = await fetch('https://httpbin.org/image/png').then(r => r.arrayBuffer());
+    const uint8 = new Uint8Array(data)
+    const textDecoder = new TextDecoder()
+    const textEncoder = new TextEncoder()
+    const b64 = await e.toBase64(uint8)
+    const b64webRaw = encode(uint8)
+    const b64web = textDecoder.decode(b64webRaw)
+    const b = new Blob([data])
+    const fr = new FileReader()
+
+    // const img = new Image()
+    // document.body.append(img)
+    // img.src = `data:image/png;base64,${b64web}`
+
+    // console.log(b64)
+    // console.log(b64web)
+
+    // fast still have a slight disadvantage b/c they don't load the wasm binary
+    // with top level await, therefore they have a slight delay coming from
+    // async/await
+
+    // mesure encoding time
+    let i = 100
+    console.time('[encode]: fast');
+    while (i--) await e.toBase64(uint8)
+    console.timeEnd('[encode]: fast')
+
+    console.time('[encode]: turbo');
+    i = 100
+    while (i--) encode(textEncoder.encode(b64web))
+    console.timeEnd('[encode]: turbo')
+
+    // THIS IS UNFAIR ADVANTAGE AS I AM ONLY USING Uint8Array's
+    console.time('[encode]: turbo raw uint8')
+    i = 100
+    while (i--) encode(uint8)
+    console.timeEnd('[encode]: turbo raw uint8')
+
+
+
+
+
+    // mesure decoding time
+    console.time('[decode]: fast')
+    i = 100
+    while (i--) await e.toBytes(b64)
+    console.timeEnd('[decode]: fast')
+
+    console.time('[decode]: turbo')
+    i = 100
+    while (i--) decode(textEncoder.encode(b64web))
+    console.timeEnd('[decode]: turbo')
+
+    // THIS IS UNFAIR ADVANTAGE AS I AM ONLY USING Uint8Array's
+    console.time('[decode]: turbo raw uint8')
+    i = 100
+    while (i--) decode(b64webRaw)
+    console.timeEnd('[decode]: turbo raw uint8')
+
+  </script>
+</body>
+</html>
